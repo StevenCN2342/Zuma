@@ -34,7 +34,7 @@ bool has_whitespace(const string& text)
 
 Zuma Zuma::load_level(int level)
 {
-    if (level != 1 && level != 2)
+    if (level < 1 || level > 3)
     {
         throw std::invalid_argument("Unsupported level number");
     }

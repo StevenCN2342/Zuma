@@ -1,5 +1,6 @@
 #include<zuma.h>
 #include<cctype>
+#include<stack>
 #include<stdexcept>
 using namespace std;
 
@@ -59,7 +60,7 @@ int main()
     int level = 0;
     while (true)
     {
-        cout << "Please select a difficulty level (1 or 2) : " << endl;
+        cout << "Please select a difficulty level (1, 2, or 3) : " << endl;
         if (!read_line(line))
         {
             if (cin.eof())
@@ -71,12 +72,12 @@ int main()
             return 1;
         }
 
-        if (parse_int(line, level) && (level == 1 || level == 2))
+        if (parse_int(line, level) && level >= 1 && level <= 3)
         {
             break;
         }
 
-        cout << "Invalid level. Enter 1 or 2." << endl;
+        cout << "Invalid level. Enter 1, 2, or 3." << endl;
     }
 
     Zuma zuma;
@@ -106,6 +107,37 @@ int main()
 
     bool win = false;
     bool lose = false;
+    stack<Zuma> history;
+
+    auto prompt_after_game = [&]() -> char
+    {
+        while (true)
+        {
+            cout << "Enter r to undo the last round, or press Enter to exit." << endl;
+            if (!read_line(line))
+            {
+                if (cin.eof())
+                {
+                    cout << "Input ended." << endl;
+                    return 'e';
+                }
+                cerr << "Input error." << endl;
+                return 'x';
+            }
+
+            string trimmed = trim(line);
+            if (trimmed == "r")
+            {
+                return 'r';
+            }
+            if (trimmed.empty())
+            {
+                return 'e';
+            }
+
+            cout << "Invalid input. Enter r to undo, or press Enter to exit." << endl;
+        }
+    };
 
     while (!win && !lose)
     {
@@ -114,7 +146,7 @@ int main()
         char option = '\0';
         while (true)
         {
-            cout << "Shoot or quit? (s/q)" << endl;
+            cout << "Shoot, quit, or undo? (s/q/r)" << endl;
             if (!read_line(line))
             {
                 if (cin.eof())
@@ -127,13 +159,29 @@ int main()
             }
 
             string trimmed = trim(line);
-            if (trimmed == "s" || trimmed == "q")
+            if (trimmed == "s" || trimmed == "q" || trimmed == "r")
             {
                 option = trimmed[0];
                 break;
             }
 
             cout << "Invalid option! Input again. " << endl;
+        }
+
+        if (option == 'r')
+        {
+            if (history.empty())
+            {
+                cout << "No previous round to undo." << endl;
+                continue;
+            }
+
+            zuma = history.top();
+            history.pop();
+            win = false;
+            lose = false;
+            cout << "Undo complete." << endl;
+            continue;
         }
 
         if (option == 's')
@@ -162,48 +210,48 @@ int main()
                 break;
             }
 
+            history.push(zuma);
             zuma.shoot(pos);
             zuma.combo();
             zuma.add_ball();
             zuma.finish_round();
-
-            win = zuma.is_victory();
-            lose = zuma.is_defeat();
-
-            if (win)
-            {
-                zuma.print_zuma();
-                cout << "You win! " << endl;
-                break;
-            }
-            else if (lose)
-            {
-                zuma.print_zuma();
-                cout << "Nice try. " << endl;
-                break;
-            }
         }
         else
         {
+            history.push(zuma);
             zuma.quit();
             zuma.add_ball();
             zuma.finish_round();
+        }
 
-            win = zuma.is_victory();
-            lose = zuma.is_defeat();
+        win = zuma.is_victory();
+        lose = zuma.is_defeat();
 
-            if (win)
+        if (win || lose)
+        {
+            zuma.print_zuma();
+            cout << (win ? "You win! " : "Nice try. ") << endl;
+
+            if (history.empty())
             {
-                zuma.print_zuma();
-                cout << "You win! " << endl;
-                break;
+                return 0;
             }
-            else if (lose)
+
+            char choice = prompt_after_game();
+            if (choice == 'x')
             {
-                zuma.print_zuma();
-                cout << "Nice try. " << endl;
-                break;
+                return 1;
             }
+            if (choice == 'e')
+            {
+                return 0;
+            }
+
+            zuma = history.top();
+            history.pop();
+            win = false;
+            lose = false;
+            cout << "Undo complete." << endl;
         }
     }
 
