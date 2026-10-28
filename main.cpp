@@ -1,83 +1,184 @@
 #include<zuma.h>
+#include<cctype>
+#include<stdexcept>
 using namespace std;
+
+namespace
+{
+string trim(const string& text)
+{
+    size_t begin = 0;
+    size_t end = text.size();
+    while (begin < end && std::isspace(static_cast<unsigned char>(text[begin])))
+    {
+        ++begin;
+    }
+    while (end > begin && std::isspace(static_cast<unsigned char>(text[end - 1])))
+    {
+        --end;
+    }
+    return text.substr(begin, end - begin);
+}
+
+bool parse_int(const string& text, int& value)
+{
+    string trimmed = trim(text);
+    if (trimmed.empty())
+    {
+        return false;
+    }
+
+    size_t consumed = 0;
+    try
+    {
+        value = std::stoi(trimmed, &consumed);
+    }
+    catch (const std::exception&)
+    {
+        return false;
+    }
+
+    return consumed == trimmed.size();
+}
+
+bool read_line(string& line)
+{
+    if (getline(cin, line))
+    {
+        return true;
+    }
+    return false;
+}
+}
 
 int main()
 {
     cout << "Welcome to the Zuma Game! " << endl;
 
-    cout << "Please select a difficulty level (1 or 2) : " << endl;
-
-    int level;
-    cin >> level;
-
-    if(level != 1 && level != 2)
+    string line;
+    int level = 0;
+    while (true)
     {
-        cout << "Invalid level! Restarted. " << endl;
+        cout << "Please select a difficulty level (1 or 2) : " << endl;
+        if (!read_line(line))
+        {
+            if (cin.eof())
+            {
+                cout << "Input ended." << endl;
+                return 0;
+            }
+            cerr << "Input error." << endl;
+            return 1;
+        }
+
+        if (parse_int(line, level) && (level == 1 || level == 2))
+        {
+            break;
+        }
+
+        cout << "Invalid level. Enter 1 or 2." << endl;
+    }
+
+    Zuma zuma;
+    try
+    {
+        zuma = Zuma::load_level(level);
+    }
+    catch (const exception& ex)
+    {
+        cerr << "ERROR: " << ex.what() << endl;
         return 1;
     }
 
-    Zuma zuma = zuma.load_level(level);
+    if (zuma.is_victory())
+    {
+        zuma.print_zuma();
+        cout << "You win! " << endl;
+        return 0;
+    }
+
+    if (zuma.is_defeat())
+    {
+        zuma.print_zuma();
+        cout << "Nice try. " << endl;
+        return 0;
+    }
 
     bool win = false;
     bool lose = false;
 
-    while(!win && !lose)
+    while (!win && !lose)
     {
         zuma.print_zuma();
 
-        cout << "Shoot or quit? (s/q)" << endl;
-
-        char option;
-
-        while(1)
+        char option = '\0';
+        while (true)
         {
-            cin >> option;
-            if(option != 's' && option != 'q')
+            cout << "Shoot or quit? (s/q)" << endl;
+            if (!read_line(line))
             {
-                cout << "Invalid option! Input again. " << endl;
-                continue;
+                if (cin.eof())
+                {
+                    cout << "Input ended." << endl;
+                    return 0;
+                }
+                cerr << "Input error." << endl;
+                return 1;
             }
-            break;
+
+            string trimmed = trim(line);
+            if (trimmed == "s" || trimmed == "q")
+            {
+                option = trimmed[0];
+                break;
+            }
+
+            cout << "Invalid option! Input again. " << endl;
         }
 
-        if(option == 's')
+        if (option == 's')
         {
-            cout << "Select a target, input the number ahead of which you want to shoot: " << endl;
-
-            int pos;
-
-            while(1)
+            int pos = 0;
+            while (true)
             {
-                cin >> pos;
-                
-                int n = zuma.get_active().size();
-                // pos表示“在下标为pos的元素之前插入”，若pos = n，则代表在末尾插入，合法pos为 0 <= pos <= n
+                cout << "Select a target, input the number ahead of which you want to shoot: " << endl;
+                if (!read_line(line))
+                {
+                    if (cin.eof())
+                    {
+                        cout << "Input ended." << endl;
+                        return 0;
+                    }
+                    cerr << "Input error." << endl;
+                    return 1;
+                }
 
-                if(pos<0||pos>n)
+                int n = static_cast<int>(zuma.get_active().size());
+                if (!parse_int(line, pos) || pos < 0 || pos > n)
                 {
                     cout << "Invalid target position!" << endl;
                     continue;
                 }
-
                 break;
             }
 
             zuma.shoot(pos);
-
             zuma.combo();
-
             zuma.add_ball();
+            zuma.finish_round();
 
             win = zuma.is_victory();
             lose = zuma.is_defeat();
 
-            if(win)
+            if (win)
             {
+                zuma.print_zuma();
                 cout << "You win! " << endl;
                 break;
             }
-            else if(lose)
+            else if (lose)
             {
+                zuma.print_zuma();
                 cout << "Nice try. " << endl;
                 break;
             }
@@ -85,19 +186,21 @@ int main()
         else
         {
             zuma.quit();
-
             zuma.add_ball();
+            zuma.finish_round();
 
             win = zuma.is_victory();
             lose = zuma.is_defeat();
 
-            if(win)
+            if (win)
             {
+                zuma.print_zuma();
                 cout << "You win! " << endl;
                 break;
             }
-            else if(lose)
+            else if (lose)
             {
+                zuma.print_zuma();
                 cout << "Nice try. " << endl;
                 break;
             }
