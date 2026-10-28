@@ -110,6 +110,10 @@ void Zuma::combo()
                 end = start;
                 break;
             }
+
+            left_window++;
+            mid_window++;
+            right_window++;
         }
 
         if(should_combo == false) break;
@@ -128,6 +132,8 @@ void Zuma::combo()
 
 void Zuma::add_ball()
 {
+    if(this->feed.empty()) return;
+
     char current_ball = this->feed.front();
     this->feed.pop();
 
@@ -143,6 +149,16 @@ void Zuma::print_zuma()
     }
     cout << endl;
 
+    cout << "Balls to appear: ";
+    queue<char> temp = this->feed;
+    while(!temp.empty())
+    {
+        char c = temp.front();
+        cout << c;
+        temp.pop();
+    }
+    cout << endl;
+
     cout << "Current ammo: ";
     cout << this->current_ammo << endl;
 
@@ -152,7 +168,7 @@ void Zuma::print_zuma()
 
 bool Zuma::is_victory()
 {
-    if(this->active.size() <= this->max_length && this->feed.empty())
+    if(this->active.empty() && this->feed.empty())
     {
         return true;
     }

@@ -1,5 +1,4 @@
 #include<zuma.h>
-#include<zuma.cpp>
 using namespace std;
 
 int main()
@@ -14,13 +13,13 @@ int main()
     if(level != 1 && level != 2)
     {
         cout << "Invalid level! Restarted. " << endl;
-        return;
+        return 1;
     }
 
     Zuma zuma = zuma.load_level(level);
 
-    bool win;
-    bool lose;
+    bool win = false;
+    bool lose = false;
 
     while(!win && !lose)
     {
@@ -29,11 +28,15 @@ int main()
         cout << "Shoot or quit? (s/q)" << endl;
 
         char option;
-        cin >> option;
 
-        if(option != 's' || option != 'q')
+        while(1)
         {
-            cout << "Invalid option! Input again. " << endl;
+            cin >> option;
+            if(option != 's' && option != 'q')
+            {
+                cout << "Invalid option! Input again. " << endl;
+                continue;
+            }
             break;
         }
 
@@ -42,14 +45,20 @@ int main()
             cout << "Select a target, input the number ahead of which you want to shoot: " << endl;
 
             int pos;
-            cin >> pos;
 
-            int n = zuma.get_active().size();
-            // pos表示“在下标为pos的元素之前插入”，若pos = n，则代表在末尾插入，合法pos为 0 <= pos <= n
-
-            if(pos<0||pos>n)
+            while(1)
             {
-                cout << "Invalid target position!" << endl;
+                cin >> pos;
+                
+                int n = zuma.get_active().size();
+                // pos表示“在下标为pos的元素之前插入”，若pos = n，则代表在末尾插入，合法pos为 0 <= pos <= n
+
+                if(pos<0||pos>n)
+                {
+                    cout << "Invalid target position!" << endl;
+                    continue;
+                }
+
                 break;
             }
 
@@ -76,8 +85,6 @@ int main()
         else
         {
             zuma.quit();
-
-            zuma.combo();
 
             zuma.add_ball();
 

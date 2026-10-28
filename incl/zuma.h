@@ -40,10 +40,9 @@ public:
         this->ammo = ammo;
         this->max_length = max_length;
 
-        this->current_ammo = ammo.front();
-        ammo.push(this->current_ammo);
-
-        ammo.pop();
+        this->current_ammo = this->ammo.front();
+        this->ammo.pop();
+        this->ammo.push(this->current_ammo);
     }
 
     vector<char> get_active()
